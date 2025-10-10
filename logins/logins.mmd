@@ -1,0 +1,9 @@
+flowchart TD
+    A(["Início"]) --> B["Pedir número de tentativas"]
+    B --> C["Definir limite = 5"]
+    C --> D{"tentativas &lt; limite"}
+    D -- Sim --> E["Calcular restantes = limite - tentativas"]
+    E --> F["Mostrar Ainda tem X tentativas antes do bloqueio"]
+    F --> G(["Fim"])
+    D -- Não --> H["Mostrar Conta bloqueada"]
+    H --> G

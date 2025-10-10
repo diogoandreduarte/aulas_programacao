@@ -1,0 +1,11 @@
+flowchart TD
+    A([Início])
+    B[/"Introduza a sua idade por favor"/]
+    C{Idade >= 18?}
+    D["Autorizado"]
+    E["Não Autorizado"]
+    F([Fim])
+
+    A --> B --> C
+    C -- Sim --> D --> F
+    C -- Não --> E --> F
