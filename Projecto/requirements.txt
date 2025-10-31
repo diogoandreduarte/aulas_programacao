@@ -1,0 +1,7 @@
+pip-audit==2.7.3
+safety==3.2.3
+typer==0.9.0
+click==8.1.7
+pip==25.3
+marshmallow==3.21.1
+safety-schemas==0.0.17

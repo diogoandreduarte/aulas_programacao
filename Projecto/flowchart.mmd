@@ -1,0 +1,17 @@
+flowchart TD
+  A[Início] --> B[Receber tentativa de login (username, IP, password)]
+  B --> C{IP na blacklist?}
+  C -- Sim --> C1[Rejeitar de imediato e registar no CSV] --> Z[Fim]
+  C -- Não --> D[Verificar lockout/backoff local do utilizador]
+  D -->|Bloqueado| D1[Informar tempo de espera] --> E[Registar CSV] --> Z
+  D -->|Livre| F[Validar credenciais com PBKDF2-HMAC-SHA256 + salt]
+  F -->|Sucesso| G[Reset falhas; permitir login] --> H[Registar CSV] --> Z
+  F -->|Falha| I[Incrementar falhas; calcular backoff exponencial] --> J[Registar CSV] --> Z
+
+  subgraph Analytics (batch ou periódico)
+    K[Carregar logs_exemplo.csv]
+    K --> L[Calcular estatísticas]
+    L --> M{Regras: >=10 falhas/5min; >=30/24h; >=5 users/10min}
+    M -->|Sim| N[Atualizar blacklist.json (temp/permanente)]
+    M -->|Não| O[Sem alterações]
+  end

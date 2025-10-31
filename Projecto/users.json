@@ -1,0 +1,12 @@
+{
+  "123": {
+    "salt": "0YE07y+g1/dZUZVo97Le6w==",
+    "hash": "W0oO+jix5fQDwobpAMGedjsfr5GCSPZCOmLS5znNsjc=",
+    "created_at": 1761934725
+  },
+  "1234": {
+    "salt": "uaanNYHAqCOLgrg/bTelxw==",
+    "hash": "qOAFCtvwl2jM38zciWHVNaRNN7qEp2dNFk9B2beLMkE=",
+    "created_at": 1761934736
+  }
+}

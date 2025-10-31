@@ -1,0 +1,17 @@
+flowchart TD
+    A("Start")
+    B("End")
+    C[/"Introduza o número de tentativas de login já realizadas: "/]
+    D["limite = 5"]
+    E{"Tentativas  < limite?"}
+    F["restantes = limite - tentativas"]
+    G["print(f'Ainda tem {restantes} tentativa(s) antes do bloqueio.')"]
+    H["Conta bloqueada."]
+    A --> C
+    C --> D
+    D --> E
+    F --> G
+    E -->|Yes| F
+    E -->|No| H
+    G --> B
+    H --> B
