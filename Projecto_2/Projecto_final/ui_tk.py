@@ -32,7 +32,7 @@ class LoginApp(tk.Tk):
         btn_frame = tk.Frame(self)
         btn_frame.pack(pady=15)
         tk.Button(btn_frame, text="Login", width=12, command=self.on_login).grid(row=0, column=0, padx=5)
-        tk.Button(btn_frame, text="Criar Utilizador", width=12, command=self.on_create_user).grid(row=0, column=1, padx=5)
+        
 
         # Status
         self.status = tk.StringVar(value="Pronto.")
@@ -55,23 +55,6 @@ class LoginApp(tk.Tk):
         else:
             messagebox.showerror("Falha", msg)
 
-    def on_create_user(self):
-        username = simpledialog.askstring("Criar utilizador", "Novo username:")
-        if not username:
-            return
-        # Ask for password twice
-        pwd1 = simpledialog.askstring("Password", "Password:", show="*")
-        if not pwd1:
-            return
-        pwd2 = simpledialog.askstring("Password", "Confirmar password:", show="*")
-        if pwd1 != pwd2:
-            messagebox.showerror("Erro", "As passwords não coincidem.")
-            return
-        try:
-            create_user(username.strip(), pwd1)
-            messagebox.showinfo("OK", f"Utilizador '{username}' criado.")
-        except ValueError as e:
-            messagebox.showerror("Erro", str(e))
 
 def run_gui():
     app = LoginApp()
