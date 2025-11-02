@@ -1,0 +1,12 @@
+{
+  "users": {
+    "demo": {
+      "salt": "P2ntexs0R4K0bUTbnfa3Aw==",
+      "hash": "Y3rPOcufqH+r4DJ5AP4pUvViiC8N0o+CCq6FN2D8MoQ=",
+      "iterations": 120000,
+      "fail_count": 0,
+      "locked_until": 0.0,
+      "_username": "demo"
+    }
+  }
+}

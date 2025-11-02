@@ -1,0 +1,16 @@
+{
+  "alice": {
+    "failed_attempts": 0,
+    "hash": "787e75dd39e55030265bb1c0c635ad9cf1d76b2bc2515281951b507f3b522891",
+    "last_failed": null,
+    "lockout_until": null,
+    "salt": "94dfcd9164ac448ed596dc0fd9ab96f2"
+  },
+  "diogo": {
+    "failed_attempts": 1,
+    "hash": "b5cc20258c56babe36df7a2c1e527e10fb9f70a24e28c280ddc8119b5e08a134",
+    "last_failed": "2025-11-02T13:07:46.509116+00:00",
+    "lockout_until": null,
+    "salt": "77db8bae5a18d998ea3c07d03f5f728b"
+  }
+}
