@@ -1,0 +1,9 @@
+flowchart TD
+    A[Início] --> B[Receber password]
+    B --> C[Receber email]
+    C --> D[Receber IP]
+    D --> E[hash_password password]
+    E --> F[is_corporate_email email]
+    F --> G[mask_ip IP]
+    G --> H[Mostrar resultados]
+    H --> I[Fim]

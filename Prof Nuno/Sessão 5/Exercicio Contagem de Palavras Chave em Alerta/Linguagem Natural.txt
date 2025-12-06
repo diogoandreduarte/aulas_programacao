@@ -1,0 +1,13 @@
+Este programa começa por gerar automaticamente uma chave de encriptação, que é guardada num ficheiro
+com data e hora. Esta chave serve para desencriptar os dados no futuro e deve ser mantida em 
+segurança. 
+De seguida, pede ao utilizador para introduzir frases de alerta, uma de cada vez, até escrever 
+“sair” para terminar.
+Cada frase é registada e analisada para saber se contém a palavra “falha 101”. 
+Caso contenha, a mesma é contabilizada. 
+Todas as frases introduzidas são depois encriptadas com a chave gerada no início e guardadas num 
+segundo ficheiro, também com data e hora, para que possa ser facilmente relacionado com o ficheiro 
+da chave.
+No final, o programa apresenta um relatório com o número total de alertas recebidos, 
+quantos mencionaram “falha 101” e os nomes dos dois ficheiros criados: um com a chave de 
+encriptação e outro com os alertas encriptados.

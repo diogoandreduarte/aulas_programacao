@@ -1,0 +1,17 @@
+O objectivo deste programa é implementar um conjunto de funções úteis na área da cibersegurança, 
+organizadas e com boas práticas de programação. 
+O programa começa por solicitar ao utilizador três informações: uma password, um endereço de email 
+e um endereço IP.
+A seguir, a password introduzida é processada por uma função, que aplica o algoritmo SHA-256 e 
+devolve o respetivo hash da password recebida.
+Depois, vai comparar a password para ver se o email é corporativo. Se for, devolve True, senão 
+devolve False.
+Seguidamente, o endereço IP é tratado por uma outra função, onde analisa se IP é mascarado, se 
+está no formato a.b.c.d, se sim, devolve o formato “a.***.***.d”. 
+Se o IP estiver num outro qualquer formato, a função devolve “IP inválido”.
+A seguir, o programa, analisa o email através de outra função, que verifica se termina com o 
+domínio corporativo (“@empresa.pt”). Se sim, devolve True.
+Uma função principal coordena o processo e apresenta o resultado ao utilizador.
+Nenhuma informação é guardada em variáveis globais.
+Todas as funções têm docstrings claras.
+

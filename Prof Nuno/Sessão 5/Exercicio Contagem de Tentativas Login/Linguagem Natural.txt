@@ -1,0 +1,13 @@
+O programa deve simular tentativas de login com limite de 3 tentativas.
+O utilizador deve introduzir o nome e password
+Se for introduzido pelo utilizador "admin" e "1234" deve ser mostrado "Acesso permitido"
+Caso contrário, informa que o acesso foi negado e permite nova tentativa.
+Após 3 tentativas falhadas, o programa bloqueia a conta e termina.
+
+
+
+Sugestões de melhoria 
+
+1 Não mostrar o numero de tentativas restantes.
+2-Ao fim das tentativas manter a conta bloqueada durante um tempo de periodo(algumas horas).
+3-Manter as informações sensiveis encreptidas.

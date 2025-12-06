@@ -1,0 +1,18 @@
+INICIAR
+
+Criar lista ips_suspeitos com 5 IPs
+PARA cada ip EM ips_suspeitos
+    SE ip começa por "10"
+        IMPRIMIR ip
+
+Criar dicionário utilizador com nome, tentativas, bloqueado=False
+SE utilizador["tentativas"] >= 3
+    utilizador["bloqueado"] = True
+
+IMPRIMIR dados do utilizador
+
+mensagem = "Tentativa de login do utilizador admin falhada"
+SE "falha" ESTÁ EM mensagem
+    IMPRIMIR "Falha detetada'"
+
+FIM

@@ -1,0 +1,19 @@
+flowchart TD
+    A[Início] --> B[Inicializar lista senhas]
+    B --> C[Repetir 5 vezes: pedir senha e adicionar à lista]
+    C --> D[Inicializar dicionário registo com fortes=0, fracas=0]
+    D --> E[Para cada senha na lista]
+    E --> F{Comprimento < 8?}
+    F -- Sim --> G[Mostrar 'Senha fraca']
+    G --> H[Incrementar registo fracas]
+    F -- Não --> I[Mostrar 'Senha forte']
+    I --> J[Incrementar registo fortes]
+    H --> K[Próxima senha]
+    J --> K
+    K --> L[Mostrar totais de senhas fortes e fracas]
+    L --> M[Verificar se root está na string log]
+    M --> N{Contém root?}
+    N -- Sim --> O[Mostrar 'Palavra 'root' detetada']
+    N -- Não --> P[Mostrar 'Palavra 'root' não detetada']
+    O --> Q[Fim]
+    P --> Q

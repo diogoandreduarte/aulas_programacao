@@ -1,0 +1,19 @@
+flowchart TD
+    A[Início] --> B[Criar lista de 5 IPs suspeitos]
+    B --> C[Percorrer lista de IPs]
+    C --> D{IP começa por '10'?}
+    D -- Sim --> E[Imprimir IP]
+    D -- Não --> F[Continuar ciclo]
+    E --> F
+    F --> G[Criar dicionário do utilizador]
+    G --> H{Tentativas >= 3?}
+    H -- Sim --> I[Marcar utilizador como bloqueado]
+    H -- Não --> J[Manter bloqueado como False]
+    I --> K[Mostrar dados do utilizador]
+    J --> K
+    K --> L[Verificar se mensagem contém 'falha']
+    L --> M{Contém 'falha'?}
+    M -- Sim --> N[Imprimir confirmação de falha detetada]
+    M -- Não --> O[Não imprimir nada]
+    N --> P[Fim]
+    O --> P

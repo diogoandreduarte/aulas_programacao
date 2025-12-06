@@ -1,0 +1,32 @@
+INICIO
+FFUNÇÃO hash_password(pwd: string) -> string
+    CALCULAR hash SHA-256 da pwd
+    RETORNAR hash como string
+
+FUNÇÃO check_password(pwd: string, pwd_hash: string) -> bool
+    CALCULAR hash SHA-256 da pwd
+    COMPARAR com pwd_hash
+    RETORNAR True se iguais, senão False
+
+FUNÇÃO mask_ip(ip: string) -> string
+    DIVIDIR ip por "."
+    SE tiver 4 partes:
+        RETORNAR a + ".***.***." + d
+    SENÃO:
+        RETORNAR "IP inválido"
+
+FUNÇÃO is_corporate_email(email: string, dominio: string = "empresa.pt") -> bool
+    VERIFICAR se email termina com "@" + dominio
+    RETORNAR True ou False
+
+FUNÇÃO main()
+    LER password do utilizador
+    LER email do utilizador
+    LER IP do utilizador
+
+    CALCULAR hash da password
+    VERIFICAR se email é corporativo
+    MASCARAR IP
+
+    MOSTRAR resultados
+FIM

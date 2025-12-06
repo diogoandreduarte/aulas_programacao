@@ -1,0 +1,27 @@
+INICIO
+Função obter_lista_ips():
+    Criar lista_ips vazia
+    Para i de 1 a 5:
+        Pedir IP ao utilizador
+        Adicionar IP à lista_ips
+    Retornar lista_ips
+
+Função verificar_bloqueio(ip, lista_bloqueados):
+    Se ip está em lista_bloqueados:
+        Retornar Verdadeiro
+    Senão:
+        Retornar Falso
+
+Função gerar_relatorio(lista_ips, lista_bloqueados):
+    Mostrar "Relatório:"
+    Para cada ip em lista_ips:
+        Se verificar_bloqueio(ip, lista_bloqueados):
+            Mostrar ip + " -> Bloqueado"
+        Senão:
+            Mostrar ip + " -> Limpo"
+
+Função main():
+    lista_bloqueados ← ["10.0.0.1", "172.16.8.3"]
+    lista_ips ← obter_lista_ips()
+    gerar_relatorio(lista_ips, lista_bloqueados)
+FIM

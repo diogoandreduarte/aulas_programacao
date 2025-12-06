@@ -1,0 +1,13 @@
+Começamos por criar uma lista com nome ips_suspeito scom cinco endereços IP que 
+consideramos suspeitos. 
+De seguida, percorremos essa lista toda e mostramos apenas os IPs que começam por “10”, pois são os 
+que pertencem a redes internas e que queremos analisar com mais atenção.
+De seguida, criamos um dicionário com informações sobre um utilizador, incluindo o nome, o número 
+de tentativas de login e se está ou não bloqueado. 
+Se o número de tentativas for maior ou igual a três, marcamos o utilizador como bloqueado (true),
+sendo o utilizador bloqueado por excesso de tentativas falhadas.
+A seguir, mostramos todos os dados do dicionário utilizador para visualizar as informações 
+actualizadas.
+Por fim, temos uma mensagem que indica uma tentativa de login falhada, e verificamos se essa 
+mensagem contém a palavra “falha”, se sim, então o sistema detecta uma tentaiva de login sem 
+sucesso.

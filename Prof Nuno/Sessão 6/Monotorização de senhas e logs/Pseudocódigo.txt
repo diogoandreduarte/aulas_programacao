@@ -1,0 +1,26 @@
+Inici0
+Criar lista vazia chamada senhas
+Para i de 1 a 5:
+    Pedir ao utilizador para introduzir uma senha
+    Adicionar senha à lista senhas
+
+Criar dicionário registo com:
+    "fortes" = 0
+    "fracas" = 0
+
+Para cada senha na lista senhas:
+    Se comprimento da senha < 8:
+        Mostrar "Senha fraca"
+        Incrementar registo["fracas"]
+    Senão:
+        Mostrar "Senha forte"
+        Incrementar registo["fortes"]
+
+Mostrar mensagem final com os totais de senhas fortes e fracas
+
+Definir string log = "Tentativa de acesso do utilizador root"
+Se "root" estiver na string log:
+    Mostrar "A palavra 'root' foi detetada"
+Senão:
+    Mostrar "A palavra 'root' não foi detetada"
+Fim

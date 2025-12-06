@@ -1,0 +1,12 @@
+O programa começa por solicitar ao utilizador que introduza cinco endereços IP, um de cada vez. 
+Cada IP fornecido é armazenado numa lista chamada lista_ips. Existe também uma lista pré-definida de
+IPs bloqueados, a lista_bloqueados, que representa uma blacklist de endereços considerados 
+inseguros ou indesejados. Após recolher os IPs, o programa verifica, um a um,se cada endereço 
+introduzido pelo utilizador se encontra na lista de bloqueados. 
+Para isso, utiliza uma função que compara o IP com os elementos da lista negra. 
+Consoante o resultado, o IP é classificado como "bloqueado" se estiver na lista ou como "limpo" se 
+não estiver. 
+No fim, o programa gera um relatório que apresenta todos os IPs introduzidos, indicando claramente 
+quais estão bloqueados e quais estão limpos. 
+Esta abordagem modular permite organizar o código em funções específicas, facilitando a leitura e 
+manutenção e reutilização em contextos de segurança informática.

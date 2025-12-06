@@ -1,0 +1,45 @@
+INICIAR
+
+// Gerar chave de encriptação
+chave ← gerar nova chave Fernet
+fernet ← inicializar Fernet com chave
+
+// Obter data e hora atual
+timestamp ← data e hora atual formatada
+
+// Guardar chave num ficheiro
+nome_ficheiro_chave ← "chave_encriptacao_" + timestamp + ".txt"
+escrever chave no ficheiro nome_ficheiro_chave
+
+// Mostrar instruções ao utilizador
+exibir mensagem de boas-vindas e instruções
+
+// Inicializar variáveis
+alertas ← lista vazia
+contador_falha101 ← 0
+
+// Recolher frases de alerta
+ENQUANTO  for verdadeiro:
+    entrada ← ler input do utilizador
+    SE entrada for "sair":
+        TERMINAR ciclo
+    adicionar entrada à lista alertas
+    SE entrada contém "falha 101" 
+        incrementar contador_falha101
+
+// Encriptar alertas
+alertas_encriptados ← lista vazia
+PARA cada alerta em alertas:
+    encriptar alerta com fernet
+    adicionar alerta encriptado à lista alertas_encriptados
+
+// Guardar alertas encriptados num ficheiro
+nome_ficheiro_alertas ← "alertas_encriptados_" + timestamp + ".txt"
+escrever cabeçalho e alertas encriptados no ficheiro nome_ficheiro_alertas
+
+// Mostrar relatório final
+exibir total de alertas
+exibir número de alertas com "falha 101"
+exibir nomes dos ficheiros gerados
+
+SAIR

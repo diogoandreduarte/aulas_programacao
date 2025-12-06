@@ -1,0 +1,12 @@
+flowchart TD
+    A[Inicio] --> B[Obter lista de IPs]
+    B --> C[Definir lista de bloqueados]
+    C --> D[Para cada IP na lista]
+    D --> E{IP esta na lista de bloqueados?}
+    E -- Sim --> F[Marcar como Bloqueado]
+    E -- Nao --> G[Marcar como Limpo]
+    F --> H[Mostrar resultado]
+    G --> H
+    H --> I{Ha mais IPs?}
+    I -- Sim --> D
+    I -- Nao --> J[Fim]

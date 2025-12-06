@@ -1,0 +1,6 @@
+O programa começa por pedir ao utilizador que introduza 5 senhas, que são guardadas numa lista. 
+Para cada senha, verifica se tem menos de 8 caracteres. Se tiver, é considerada "senha fraca", 
+caso contrário, é considerada "senha forte". 
+O programa regista o número total de senhas fortes e senhas fracas num dicionário. 
+No final, apresenta uma mensagem com o total de cada tipo. 
+Por fim, verifica se a frase “Tentativa de acesso do utilizador root” contém a palavra “root”.

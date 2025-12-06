@@ -1,0 +1,9 @@
+flowchart TD
+    A[Início] --> B{Tentativas < 3?}
+    B -- Sim --> C[Introduzir nome de utilizador e palavra-passe]
+    C --> D{Valores introduzidos são Admin e 1234?}
+    D -- Sim --> E[Acesso permitido]
+    D -- Não --> F[Acesso negado]
+    F --> G[Adicionar tentativa]
+    G --> B
+    B -- Não --> H[Conta bloqueada]

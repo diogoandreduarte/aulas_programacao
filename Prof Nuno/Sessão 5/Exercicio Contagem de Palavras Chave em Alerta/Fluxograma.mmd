@@ -1,0 +1,16 @@
+flowchart TD
+    A[Início do Script] --> B[Gerar chave Fernet]
+    B --> C[Guardar chave de encriptação em ficheiro com timestamp]
+    C --> D[Mostrar instruções ao utilizador]
+    D --> E[Inicializar lista e contador]
+    E --> F{Utilizador introduz frase de alerta?}
+    F -->|Sim| G[Adicionar frase de alerta à lista]
+    G --> H{Contém 'falha 101'?}
+    H -->|Sim| I[Incrementar contador]
+    H -->|Não| J[Continuar]
+    I --> J
+    J --> F
+    F -->|Não| K[Encriptar frase de alerta com Fernet]
+    K --> L[Guardar frase de alerta encriptada em ficheiro com timestamp]
+    L --> M[Mostrar relatório final]
+    M --> N[Fim]

@@ -1,0 +1,15 @@
+Inicializar contador de tentativas com 0
+
+Enquanto tentativas < 3:
+    Pedir nome de utilizador
+    Pedir palavra-passe
+
+    Se nome de utilizador == "admin" E palavra-passe == "1234": 
+        Mostrar "Acesso permitido"
+        Terminar programa
+    Senão:
+        Mostrar "Acesso negado"
+        Incrementar tentativas
+
+Se tentativas == 3:
+    Mostrar "Conta bloqueada"
