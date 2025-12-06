@@ -1,0 +1,88 @@
+
+PLAY [LAB COMPLETO – FTP, FileZilla, SSH, Juice Shop, Segurança] ***************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Atualizar APT] ***********************************************************
+ok: [localhost]
+
+TASK [Instalar ferramentas de ataque, auditoria e defesa] **********************
+ok: [localhost]
+
+TASK [Configurar vsftpd (FTP seguro + PASV) com ficheiro completo] *************
+ok: [localhost]
+
+TASK [Criar utilizador FTP] ****************************************************
+ok: [localhost]
+
+TASK [Definir password do utilizador FTP] **************************************
+changed: [localhost]
+
+TASK [Criar diretórios FTP (ftp e uploads)] ************************************
+ok: [localhost] => (item=ftp)
+ok: [localhost] => (item=uploads)
+
+TASK [Reiniciar e ativar vsftpd] ***********************************************
+changed: [localhost]
+
+TASK [Permitir SSH (22/tcp) na UFW] ********************************************
+ok: [localhost]
+
+TASK [Permitir FTP (21/tcp) na UFW] ********************************************
+ok: [localhost]
+
+TASK [Permitir portas passivas FTP (30000-30100/tcp) na UFW] *******************
+ok: [localhost]
+
+TASK [Ativar UFW] **************************************************************
+ok: [localhost]
+
+TASK [PasswordAuthentication no] ***********************************************
+ok: [localhost]
+
+TASK [PubkeyAuthentication yes] ************************************************
+ok: [localhost]
+
+TASK [PermitRootLogin no] ******************************************************
+ok: [localhost]
+
+TASK [Reiniciar SSH] ***********************************************************
+changed: [localhost]
+
+TASK [Configurar Fail2Ban (SSH e vsftpd)] **************************************
+ok: [localhost]
+
+TASK [Reiniciar Fail2Ban] ******************************************************
+changed: [localhost]
+
+TASK [Clonar Juice Shop (caso não exista)] *************************************
+ok: [localhost]
+
+TASK [Instalar dependências do Juice Shop] *************************************
+changed: [localhost]
+
+TASK [Configurar NGINX reverse proxy para Juice Shop] **************************
+ok: [localhost]
+
+TASK [Ativar site Juice Shop no NGINX] *****************************************
+ok: [localhost]
+
+TASK [Testar configuração NGINX] ***********************************************
+ok: [localhost]
+
+TASK [Reiniciar NGINX] *********************************************************
+changed: [localhost]
+
+TASK [Garantir que o serviço Juice Shop (juice.service) está ativo] ************
+ok: [localhost]
+
+TASK [Criar diretório de wordlists] ********************************************
+ok: [localhost]
+
+TASK [Criar wordlist comum] ****************************************************
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=27   changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

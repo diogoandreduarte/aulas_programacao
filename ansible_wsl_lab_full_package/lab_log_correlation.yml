@@ -1,0 +1,104 @@
+---
+- name: LAB – Correlação de Logs (Nginx, Fail2Ban, Netdata)
+  hosts: localhost
+  become: true
+  gather_facts: yes
+  connection: local
+
+  vars:
+    report_file: "/opt/log_correlation_report.txt"
+
+  tasks:
+
+    - name: Criar diretório /opt se não existir
+      ansible.builtin.file:
+        path: /opt
+        state: directory
+
+    - name: Limpar relatório anterior
+      ansible.builtin.file:
+        path: "{{ report_file }}"
+        state: absent
+
+    - name: Iniciar relatório novo
+      ansible.builtin.copy:
+        dest: "{{ report_file }}"
+        content: "=== RELATÓRIO DE CORRELAÇÃO DE LOGS ===\nData: {{ ansible_date_time.iso8601 }}\n\n"
+
+    # -------------------------------
+    # NGINX LOGS
+    # -------------------------------
+    - name: Recolher últimas 20 entradas do access.log
+      ansible.builtin.command: tail -n 20 /var/log/nginx/access.log
+      register: nginx_access
+
+    - name: Acrescentar ao relatório – Nginx Access
+      ansible.builtin.lineinfile:
+        path: "{{ report_file }}"
+        insertafter: EOF
+        line: |
+          --- NGINX ACCESS LOG (últimas 20 entradas) ---
+          {{ nginx_access.stdout }}
+
+    - name: Recolher últimas 20 entradas do error.log
+      ansible.builtin.command: tail -n 20 /var/log/nginx/error.log
+      register: nginx_error
+
+    - name: Acrescentar ao relatório – Nginx Error
+      ansible.builtin.lineinfile:
+        path: "{{ report_file }}"
+        insertafter: EOF
+        line: |
+          --- NGINX ERROR LOG (últimas 20 entradas) ---
+          {{ nginx_error.stdout }}
+
+    # -------------------------------
+    # FAIL2BAN LOGS
+    # -------------------------------
+    - name: Recolher últimas 20 linhas do fail2ban.log
+      ansible.builtin.command: tail -n 20 /var/log/fail2ban.log
+      register: fail2ban_log
+
+    - name: Acrescentar ao relatório – Fail2Ban
+      ansible.builtin.lineinfile:
+        path: "{{ report_file }}"
+        insertafter: EOF
+        line: |
+          --- FAIL2BAN LOG (últimas 20 entradas) ---
+          {{ fail2ban_log.stdout }}
+
+    - name: Mostrar IPs banidos atualmente
+      ansible.builtin.command: fail2ban-client banned
+      register: fail2ban_banned
+      failed_when: false
+
+    - name: Acrescentar lista de IPs banidos
+      ansible.builtin.lineinfile:
+        path: "{{ report_file }}"
+        insertafter: EOF
+        line: |
+          --- FAIL2BAN IPs BANIDOS ---
+          {{ fail2ban_banned.stdout | default('Nenhum') }}
+
+    # -------------------------------
+    # NETDATA
+    # -------------------------------
+    - name: Verificar erros do Netdata
+      ansible.builtin.command: tail -n 20 /var/log/netdata/error.log
+      register: netdata_errors
+      failed_when: false
+
+    - name: Acrescentar ao relatório – Netdata
+      ansible.builtin.lineinfile:
+        path: "{{ report_file }}"
+        insertafter: EOF
+        line: |
+          --- NETDATA ERROR LOG (últimas 20 entradas) ---
+          {{ netdata_errors.stdout | default('Sem erros registados') }}
+
+    # -------------------------------
+    # FINAL
+    # -------------------------------
+    - name: Mostrar caminho do relatório
+      ansible.builtin.debug:
+        msg: "Relatório completo gerado em {{ report_file }}"

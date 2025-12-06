@@ -1,0 +1,30 @@
+---
+- name: Exercício 4 - Proteção contra Consultas Externas
+  hosts: localhost
+  connection: local
+  become: no  # Porque vais correr com sudo por fora
+
+  vars:
+    bind_options_file: "/etc/bind/named.conf.options"
+
+  tasks:
+    - name: Garantir que named.conf.options contém as opções de segurança
+      ansible.builtin.blockinfile:
+        path: "{{ bind_options_file }}"
+        insertafter: "options {"
+        marker: "# {mark} ANSIBLE SECURITY OPTIONS"
+        block: |
+          recursion yes;
+          allow-query { localhost; };
+          allow-transfer { none; };
+          version "DNS Server Secure";
+
+    - name: Validar configuração
+      ansible.builtin.command: named-checkconf
+      register: named_checkconf
+      changed_when: false
+
+    - name: Reiniciar BIND9
+      ansible.builtin.service:
+        name: bind9
+        state: restarted

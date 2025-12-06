@@ -1,0 +1,44 @@
+---
+- name: Instalar e configurar Netdata (Monitorização em tempo real)
+  hosts: localhost
+  become: true
+  connection: local
+
+  tasks:
+
+    - name: Atualizar APT
+      apt:
+        update_cache: yes
+
+    - name: Instalar dependências do Netdata
+      apt:
+        name:
+          - curl
+          - unzip
+        state: present
+
+    - name: Instalar Netdata (script oficial, não interativo)
+      ansible.builtin.shell: |
+        curl -SsL https://my-netdata.io/kickstart.sh \
+          | bash -s -- --disable-telemetry --non-interactive
+      args:
+        executable: /bin/bash
+
+    - name: Garantir que o Netdata está a correr
+      systemd:
+        name: netdata
+        state: started
+        enabled: yes
+
+    - name: Mostrar instruções finais
+      debug:
+        msg: |
+          Netdata instalado com sucesso!
+          Acede no browser:
+          
+          👉 http://localhost:19999
+
+          Logs do Netdata:
+            /var/log/netdata/
+          Config:
+            /etc/netdata/

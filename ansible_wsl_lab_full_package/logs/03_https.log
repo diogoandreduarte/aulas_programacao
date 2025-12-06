@@ -1,0 +1,79 @@
+
+PLAY [Sessão 7 – Ativar HTTPS + TLS Hardening no Servidor Web (NGINX)] *********
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Criar diretório de logs do laboratório] **********************************
+ok: [localhost]
+
+TASK [Instalar nginx e openssl] ************************************************
+ok: [localhost]
+
+TASK [Criar diretório SSL para Nginx] ******************************************
+ok: [localhost]
+
+TASK [Gerar certificado SSL/TLS autoassinado (NGINX)] **************************
+ok: [localhost]
+
+TASK [Configurar NGINX para HTTPS + TLS Hardening + Redireção HTTP→HTTPS] ******
+ok: [localhost]
+
+TASK [Ativar site HTTPS (default)] *********************************************
+ok: [localhost]
+
+TASK [Testar configuração do NGINX] ********************************************
+ok: [localhost]
+
+TASK [Mostrar resultado do teste NGINX] ****************************************
+ok: [localhost] => {
+    "msg": []
+}
+
+TASK [Reiniciar NGINX] *********************************************************
+changed: [localhost]
+
+TASK [Verificar se NGINX está ativo] *******************************************
+ok: [localhost]
+
+TASK [Esperar que a porta 443 fique a ouvir] ***********************************
+ok: [localhost]
+
+TASK [Testar ligação HTTPS (curl)] *********************************************
+ok: [localhost]
+
+TASK [Mostrar resultado HTTPS] *************************************************
+ok: [localhost] => {
+    "msg": [
+        "Resultado do teste HTTPS (curl):",
+        [
+            "HTTP/2 200 ",
+            "server: nginx/1.18.0 (Ubuntu)",
+            "date: Sun, 30 Nov 2025 13:57:54 GMT",
+            "content-type: text/html; charset=UTF-8",
+            "content-length: 75055",
+            "access-control-allow-origin: *",
+            "x-content-type-options: nosniff",
+            "x-frame-options: SAMEORIGIN",
+            "feature-policy: payment 'self'",
+            "x-recruiting: /#/jobs",
+            "accept-ranges: bytes",
+            "cache-control: public, max-age=0",
+            "last-modified: Sun, 30 Nov 2025 12:36:07 GMT",
+            "etag: W/\"1252f-19ad4c368da\"",
+            "vary: Accept-Encoding",
+            "strict-transport-security: max-age=31536000; includeSubDomains"
+        ],
+        [
+            "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current",
+            "                                 Dload  Upload   Total   Spent    Left  Speed",
+            "",
+            "  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0",
+            "  0 75055    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0"
+        ]
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=14   changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

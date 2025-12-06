@@ -1,0 +1,205 @@
+---
+- name: LAB DNS Local + OSINT – Hosts, WHOIS, DNS, Nmap e Auditoria
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: yes
+
+
+  vars:
+    # Domínios locais 127.0.0.1
+    static_domains:
+      - "meu-site.local"
+      - "api.meu-site.local"
+      - "juice.local"
+      - "loja.local"
+      - "painel.local"
+      - "ftp.local"
+      - "ssh.local"
+
+    # Domínios locais para IP real do WSL/VM
+    dynamic_domains:
+      - "servidor.local"
+      - "nginx.local"
+
+    # OSINT
+    osint_domain: "example.com"
+    osint_report_dir: "/opt/lab_reports"
+    osint_report_file: "/opt/lab_reports/osint_report.txt"
+
+  tasks:
+    # ============================================================
+    # 1. DETETAR IP REAL DO WSL/VM
+    # ============================================================
+    - name: Obter IP interno (hostname -I)
+      ansible.builtin.command: hostname -I
+      register: wsl_ip_raw
+
+    - name: Extrair primeiro IPv4 válido
+      set_fact:
+        wsl_ip: "{{ wsl_ip_raw.stdout.split()[0] }}"
+
+    - name: Mostrar IP detetado
+      ansible.builtin.debug:
+        msg: "IP interno do WSL/VM detetado: {{ wsl_ip }}"
+
+    # ============================================================
+    # 2. ADICIONAR DOMÍNIOS LOCAIS 127.0.0.1
+    # ============================================================
+    - name: Adicionar domínios locais (127.0.0.1)
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} ANSIBLE LOCAL STATIC DOMAINS"
+        block: |
+          {% for domain in static_domains %}
+          127.0.0.1 {{ domain }}
+          {% endfor %}
+
+    # ============================================================
+    # 3. ADICIONAR DOMÍNIOS COM IP REAL DO WSL
+    # ============================================================
+    - name: Adicionar domínios com IP real do WSL/VM
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} ANSIBLE LOCAL DYNAMIC DOMAINS"
+        block: |
+          {% for domain in dynamic_domains %}
+          {{ wsl_ip }} {{ domain }}
+          {% endfor %}
+
+    # ============================================================
+    # 4. TESTES DNS LOCAL (ping e curl)
+    # ============================================================
+    - name: Testar ping a servidor.local
+      ansible.builtin.command: ping -c 1 servidor.local
+      register: ping_test
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado do ping
+      ansible.builtin.debug:
+        msg: "{{ ping_test.stdout }}"
+
+    - name: Testar curl a nginx.local
+      ansible.builtin.command: curl -I http://nginx.local
+      register: curl_test
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado do curl
+      ansible.builtin.debug:
+        msg: "{{ curl_test.stdout | default('Sem resposta (OK se não houver Nginx ativo)') }}"
+
+    # ============================================================
+    # 5. PREPARAR RELATÓRIO OSINT
+    # ============================================================
+    - name: Criar diretório dos relatórios
+      ansible.builtin.file:
+        path: "{{ osint_report_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Iniciar relatório OSINT
+      ansible.builtin.copy:
+        dest: "{{ osint_report_file }}"
+        content: |
+          === RELATÓRIO OSINT – Auditoria Pública ===
+          Data: {{ ansible_date_time.date }} {{ ansible_date_time.time }}
+          Domínio Alvo: {{ osint_domain }}
+
+          Este relatório mostra como informação pública pode expor um servidor
+          e ajudar um atacante a mapear a infraestrutura.
+
+          ------------------------------------------------------------
+
+    # ============================================================
+    # 6. Instalar ferramentas OSINT (whois, dig, nmap)
+    # ============================================================
+    - name: Instalar ferramentas OSINT
+      ansible.builtin.apt:
+        name:
+          - whois
+          - dnsutils
+          - nmap
+        state: present
+        update_cache: yes
+
+    # ============================================================
+    # 7. WHOIS
+    # ============================================================
+    - name: Executar whois
+      ansible.builtin.command: whois {{ osint_domain }}
+      register: whois_result
+      changed_when: false
+
+    - name: Adicionar WHOIS ao relatório
+      ansible.builtin.lineinfile:
+        path: "{{ osint_report_file }}"
+        line: |
+          === WHOIS – {{ osint_domain }} ===
+          {{ whois_result.stdout }}
+        insertafter: EOF
+
+    # ============================================================
+    # 8. DIG (A e MX)
+    # ============================================================
+    - name: Executar dig A
+      ansible.builtin.command: dig +noall +answer {{ osint_domain }} A
+      register: dig_a_result
+      changed_when: false
+
+    - name: Executar dig MX
+      ansible.builtin.command: dig +noall +answer {{ osint_domain }} MX
+      register: dig_mx_result
+      changed_when: false
+
+    - name: Adicionar DIG ao relatório
+      ansible.builtin.lineinfile:
+        path: "{{ osint_report_file }}"
+        line: |
+          === DIG A ===
+          {{ dig_a_result.stdout }}
+
+          === DIG MX ===
+          {{ dig_mx_result.stdout }}
+        insertafter: EOF
+
+    # ============================================================
+    # 9. NMAP – Varredura rápida
+    # ============================================================
+    - name: Executar Nmap rápido
+      ansible.builtin.command: nmap -Pn -F {{ osint_domain }}
+      register: nmap_result
+      changed_when: false
+
+    - name: Adicionar Nmap ao relatório
+      ansible.builtin.lineinfile:
+        path: "{{ osint_report_file }}"
+        line: |
+          === NMAP – Varredura rápida (top 100 portas) ===
+          {{ nmap_result.stdout }}
+        insertafter: EOF
+
+    # ============================================================
+    # 10. Instruções OSINT Externo (Shodan, DNSDumpster)
+    # ============================================================
+    - name: Adicionar instruções externas
+      ansible.builtin.lineinfile:
+        path: "{{ osint_report_file }}"
+        line: |
+          === OSINT Externo ===
+          1) Pesquisar {{ osint_domain }} em https://dnsdumpster.com
+          2) Pesquisar em https://www.shodan.io
+          3) Identificar:
+             - Portas públicas abertas
+             - Serviços vulneráveis
+             - Subdomínios expostos
+             - Histórico de scans
+        insertafter: EOF
+
+    # ============================================================
+    # 11. Resultado final
+    # ============================================================
+    - name: Mostrar localização do relatório OSINT
+      ansible.builtin.debug:
+        msg: "Relatório OSINT gerado em: {{ osint_report_file }}"

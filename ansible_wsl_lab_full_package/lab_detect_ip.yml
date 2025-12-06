@@ -1,0 +1,40 @@
+---
+- name: Detectar IP do Ubuntu e exportar para Windows
+  hosts: local
+  become: true
+  gather_facts: true
+
+  vars:
+    labinfo_dir: "/opt/labinfo"
+
+  tasks:
+    - name: Criar diretório labinfo
+      ansible.builtin.file:
+        path: "{{ labinfo_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Guardar IP principal do Ubuntu
+      ansible.builtin.copy:
+        dest: "{{ labinfo_dir }}/lab_ip.txt"
+        content: "{{ ansible_default_ipv4.address }}"
+
+    - name: Criar ficheiro JSON com o IP
+      ansible.builtin.copy:
+        dest: "{{ labinfo_dir }}/labip.json"
+        content: |
+          {
+            "lab_ip": "{{ ansible_default_ipv4.address }}"
+          }
+
+    - name: Criar script PowerShell para o Windows ler o IP
+      ansible.builtin.copy:
+        dest: "{{ labinfo_dir }}/labinfo.ps1"
+        content: |
+          $LAB_IP = "{{ ansible_default_ipv4.address }}"
+          Write-Host "LAB IP definido para: $LAB_IP"
+        mode: "0644"
+
+    - name: Mostrar IP detectado
+      ansible.builtin.debug:
+        msg: "IP do Ubuntu detectado: {{ ansible_default_ipv4.address }}"

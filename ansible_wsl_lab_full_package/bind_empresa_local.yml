@@ -1,0 +1,71 @@
+---
+- name: Exercício 3 - Criar zona DNS local empresa.local
+  hosts: localhost
+  connection: local
+  #become: no
+
+  vars:
+    bind_zone_name: "empresa.local"
+    bind_zone_file: "/etc/bind/db.empresa.local"
+
+  tasks:
+    - name: Instalar bind9
+      ansible.builtin.apt:
+        name: bind9
+        state: present
+        update_cache: yes
+
+    - name: Garantir definição da zona em named.conf.local
+      ansible.builtin.blockinfile:
+        path: /etc/bind/named.conf.local
+        marker: "# {mark} ANSIBLE {{ bind_zone_name }} ZONE"
+        block: |
+          zone "{{ bind_zone_name }}" {
+              type master;
+              file "{{ bind_zone_file }}";
+          };
+
+    - name: Ver se o ficheiro de zona já existe
+      ansible.builtin.stat:
+        path: "{{ bind_zone_file }}"
+      register: zonefile_stat
+
+    - name: Copiar modelo db.local para db.empresa.local (se ainda não existir)
+      ansible.builtin.copy:
+        src: /etc/bind/db.local
+        dest: "{{ bind_zone_file }}"
+        remote_src: true
+        owner: root
+        group: bind
+        mode: "0644"
+      when: not zonefile_stat.stat.exists
+
+    - name: Garantir registo A para ns1
+      ansible.builtin.lineinfile:
+        path: "{{ bind_zone_file }}"
+        regexp: '^ns1\s+IN\s+A\s+'
+        line: "ns1    IN    A    127.0.0.1"
+        insertafter: EOF
+
+    - name: Garantir registo A para www
+      ansible.builtin.lineinfile:
+        path: "{{ bind_zone_file }}"
+        regexp: '^www\s+IN\s+A\s+'
+        line: "www    IN    A    127.0.0.1"
+        insertafter: EOF
+
+    - name: Validar named.conf
+      ansible.builtin.command: named-checkconf
+      register: named_checkconf
+      changed_when: false
+
+    - name: Validar zona empresa.local
+      ansible.builtin.command: >
+        named-checkzone {{ bind_zone_name }} {{ bind_zone_file }}
+      register: named_checkzone
+      changed_when: false
+
+    - name: Reiniciar serviço bind9
+      ansible.builtin.service:
+        name: bind9
+        state: restarted

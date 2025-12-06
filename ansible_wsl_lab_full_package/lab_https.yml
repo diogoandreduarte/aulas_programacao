@@ -1,0 +1,129 @@
+---
+- name: Sessão 7 – Ativar HTTPS + TLS Hardening no Servidor Web (NGINX)
+  hosts: local
+  become: true
+  gather_facts: true
+
+  vars:
+    ssl_dir: "/etc/nginx/ssl"
+    ssl_key: "/etc/nginx/ssl/nginx.key"
+    ssl_cert: "/etc/nginx/ssl/nginx.crt"
+    nginx_default: "/etc/nginx/sites-available/default"
+    log_dir: "/var/log/lab_tests"
+
+  tasks:
+    - name: Criar diretório de logs do laboratório
+      ansible.builtin.file:
+        path: "{{ log_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Instalar nginx e openssl
+      ansible.builtin.apt:
+        name:
+          - nginx
+          - openssl
+        state: present
+        update_cache: yes
+
+    - name: Criar diretório SSL para Nginx
+      ansible.builtin.file:
+        path: "{{ ssl_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Gerar certificado SSL/TLS autoassinado (NGINX)
+      ansible.builtin.command: >
+        openssl req -x509 -nodes -days 365
+        -newkey rsa:2048
+        -subj "/C=PT/ST=Lisboa/L=Lisboa/O=Escola/CN=localhost"
+        -keyout {{ ssl_key }}
+        -out {{ ssl_cert }}
+      args:
+        creates: "{{ ssl_cert }}"
+
+    - name: Configurar NGINX para HTTPS + TLS Hardening + Redireção HTTP→HTTPS
+      ansible.builtin.copy:
+        dest: "{{ nginx_default }}"
+        mode: "0644"
+        content: |
+          server {
+              listen 80 default_server;
+              listen [::]:80 default_server;
+              server_name _;
+              return 301 https://$host$request_uri;
+          }
+
+          server {
+              listen 443 ssl http2 default_server;
+              listen [::]:443 ssl http2 default_server;
+
+              server_name _;
+
+              ssl_certificate {{ ssl_cert }};
+              ssl_certificate_key {{ ssl_key }};
+
+              ssl_protocols TLSv1.2 TLSv1.3;
+              ssl_prefer_server_ciphers on;
+              ssl_ciphers 'HIGH:!aNULL:!MD5';
+              ssl_session_timeout 1d;
+              ssl_session_cache shared:SSL:50m;
+              ssl_session_tickets off;
+
+              add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+              location / {
+                  proxy_pass http://127.0.0.1:3000/;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              }
+          }
+
+    # 🔥 ESTA LINHA ATIVA O SITE DEFAULT (HTTPS)
+    - name: Ativar site HTTPS (default)
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/default
+        dest: /etc/nginx/sites-enabled/default
+        state: link
+        force: yes
+
+    - name: Testar configuração do NGINX
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      changed_when: false
+
+    - name: Mostrar resultado do teste NGINX
+      ansible.builtin.debug:
+        msg: "{{ nginx_test.stdout_lines | default([]) }}"
+
+    - name: Reiniciar NGINX
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+        enabled: yes
+
+    - name: Verificar se NGINX está ativo
+      ansible.builtin.command: systemctl is-active nginx
+      register: nginx_status
+      changed_when: false
+      failed_when: nginx_status.stdout.strip() != "active"
+
+    - name: Esperar que a porta 443 fique a ouvir
+      ansible.builtin.wait_for:
+        port: 443
+        host: "127.0.0.1"
+        timeout: 15
+
+    - name: Testar ligação HTTPS (curl)
+      ansible.builtin.command: curl -k -I https://localhost
+      register: curl_test
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado HTTPS
+      ansible.builtin.debug:
+        msg:
+          - "Resultado do teste HTTPS (curl):"
+          - "{{ curl_test.stdout_lines | default([]) }}"
+          - "{{ curl_test.stderr_lines | default([]) }}"

@@ -1,0 +1,475 @@
+
+PLAY [Detectar IP do Ubuntu e exportar para Windows] ***************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Criar diretório labinfo] *************************************************
+ok: [localhost]
+
+TASK [Guardar IP principal do Ubuntu] ******************************************
+ok: [localhost]
+
+TASK [Criar ficheiro JSON com o IP] ********************************************
+ok: [localhost]
+
+TASK [Criar script PowerShell para o Windows ler o IP] *************************
+ok: [localhost]
+
+TASK [Mostrar IP detectado] ****************************************************
+ok: [localhost] => {
+    "msg": "IP do Ubuntu detectado: 172.18.216.242"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+PLAY [LAB COMPLETO – FTP, FileZilla, SSH, Juice Shop, Segurança] ***************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Atualizar APT] ***********************************************************
+ok: [localhost]
+
+TASK [Instalar ferramentas de ataque, auditoria e defesa] **********************
+ok: [localhost]
+
+TASK [Configurar vsftpd (FTP seguro + PASV) com ficheiro completo] *************
+ok: [localhost]
+
+TASK [Criar utilizador FTP] ****************************************************
+ok: [localhost]
+
+TASK [Definir password do utilizador FTP] **************************************
+changed: [localhost]
+
+TASK [Criar diretórios FTP (ftp e uploads)] ************************************
+ok: [localhost] => (item=ftp)
+ok: [localhost] => (item=uploads)
+
+TASK [Reiniciar e ativar vsftpd] ***********************************************
+changed: [localhost]
+
+TASK [Permitir SSH (22/tcp) na UFW] ********************************************
+ok: [localhost]
+
+TASK [Permitir FTP (21/tcp) na UFW] ********************************************
+ok: [localhost]
+
+TASK [Permitir portas passivas FTP (30000-30100/tcp) na UFW] *******************
+ok: [localhost]
+
+TASK [Ativar UFW] **************************************************************
+ok: [localhost]
+
+TASK [PasswordAuthentication no] ***********************************************
+ok: [localhost]
+
+TASK [PubkeyAuthentication yes] ************************************************
+ok: [localhost]
+
+TASK [PermitRootLogin no] ******************************************************
+ok: [localhost]
+
+TASK [Reiniciar SSH] ***********************************************************
+changed: [localhost]
+
+TASK [Configurar Fail2Ban (SSH e vsftpd)] **************************************
+ok: [localhost]
+
+TASK [Reiniciar Fail2Ban] ******************************************************
+changed: [localhost]
+
+TASK [Clonar Juice Shop (caso não exista)] *************************************
+ok: [localhost]
+
+TASK [Instalar dependências do Juice Shop] *************************************
+changed: [localhost]
+
+TASK [Configurar NGINX reverse proxy para Juice Shop] **************************
+ok: [localhost]
+
+TASK [Ativar site Juice Shop no NGINX] *****************************************
+ok: [localhost]
+
+TASK [Testar configuração NGINX] ***********************************************
+ok: [localhost]
+
+TASK [Reiniciar NGINX] *********************************************************
+changed: [localhost]
+
+TASK [Garantir que o serviço Juice Shop (juice.service) está ativo] ************
+ok: [localhost]
+
+TASK [Criar diretório de wordlists] ********************************************
+ok: [localhost]
+
+TASK [Criar wordlist comum] ****************************************************
+ok: [localhost]
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=27   changed=6    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+PLAY [Sessão 7 – Ativar HTTPS + TLS Hardening no Servidor Web (NGINX)] *********
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Criar diretório de logs do laboratório] **********************************
+ok: [localhost]
+
+TASK [Instalar nginx e openssl] ************************************************
+ok: [localhost]
+
+TASK [Criar diretório SSL para Nginx] ******************************************
+ok: [localhost]
+
+TASK [Gerar certificado SSL/TLS autoassinado (NGINX)] **************************
+ok: [localhost]
+
+TASK [Configurar NGINX para HTTPS + TLS Hardening + Redireção HTTP→HTTPS] ******
+ok: [localhost]
+
+TASK [Ativar site HTTPS (default)] *********************************************
+ok: [localhost]
+
+TASK [Testar configuração do NGINX] ********************************************
+ok: [localhost]
+
+TASK [Mostrar resultado do teste NGINX] ****************************************
+ok: [localhost] => {
+    "msg": []
+}
+
+TASK [Reiniciar NGINX] *********************************************************
+changed: [localhost]
+
+TASK [Verificar se NGINX está ativo] *******************************************
+ok: [localhost]
+
+TASK [Esperar que a porta 443 fique a ouvir] ***********************************
+ok: [localhost]
+
+TASK [Testar ligação HTTPS (curl)] *********************************************
+ok: [localhost]
+
+TASK [Mostrar resultado HTTPS] *************************************************
+ok: [localhost] => {
+    "msg": [
+        "Resultado do teste HTTPS (curl):",
+        [
+            "HTTP/2 200 ",
+            "server: nginx/1.18.0 (Ubuntu)",
+            "date: Sun, 30 Nov 2025 13:57:54 GMT",
+            "content-type: text/html; charset=UTF-8",
+            "content-length: 75055",
+            "access-control-allow-origin: *",
+            "x-content-type-options: nosniff",
+            "x-frame-options: SAMEORIGIN",
+            "feature-policy: payment 'self'",
+            "x-recruiting: /#/jobs",
+            "accept-ranges: bytes",
+            "cache-control: public, max-age=0",
+            "last-modified: Sun, 30 Nov 2025 12:36:07 GMT",
+            "etag: W/\"1252f-19ad4c368da\"",
+            "vary: Accept-Encoding",
+            "strict-transport-security: max-age=31536000; includeSubDomains"
+        ],
+        [
+            "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current",
+            "                                 Dload  Upload   Total   Spent    Left  Speed",
+            "",
+            "  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0",
+            "  0 75055    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0"
+        ]
+    ]
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=14   changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+PLAY [Testes automáticos de segurança SSH / FTP / NGINX / Juice Shop] **********
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Criar diretório de logs de testes do laboratório] ************************
+ok: [localhost]
+
+TASK [Mostrar IP a usar no Windows] ********************************************
+ok: [localhost] => {
+    "msg": [
+        "IP do servidor de laboratório (Ubuntu): 172.18.216.242",
+        "No Windows, este IP será carregado pela script labinfo.ps1 como $LAB_IP."
+    ]
+}
+
+TASK [Verificar se nmap está instalado] ****************************************
+changed: [localhost]
+
+TASK [Correr scan Nmap às portas 21,22,80 (localhost)] *************************
+ok: [localhost]
+
+TASK [Mostrar resumo do scan Nmap] *********************************************
+ok: [localhost] => {
+    "msg": [
+        "Nmap executado. Resultado gravado em /var/log/lab_tests/nmap_ftp_ssh_http.txt",
+        [
+            "Starting Nmap 7.80 ( https://nmap.org ) at 2025-11-30 13:57 WET",
+            "Nmap scan report for localhost (127.0.0.1)",
+            "Host is up (0.00012s latency).",
+            "",
+            "PORT   STATE SERVICE VERSION",
+            "21/tcp open  ftp     vsftpd 3.0.5",
+            "22/tcp open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.13 (Ubuntu Linux; protocol 2.0)",
+            "80/tcp open  http    nginx 1.18.0 (Ubuntu)",
+            "Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel",
+            "",
+            "Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .",
+            "Nmap done: 1 IP address (1 host up) scanned in 8.97 seconds"
+        ]
+    ]
+}
+
+TASK [Verificar se hydra está instalado] ***************************************
+changed: [localhost]
+
+TASK [Testar força bruta FTP com Hydra (esperado: SEM sucesso)] ****************
+ok: [localhost]
+
+TASK [Mostrar saída resumida do Hydra] *****************************************
+ok: [localhost] => {
+    "msg": [
+        "Hydra executado contra FTP (127.0.0.1). Log em /var/log/lab_tests/hydra_ftp_alunoftp.log",
+        [
+            "Hydra v9.2 (c) 2021 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).",
+            "",
+            "Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025-11-30 13:58:05",
+            "[DATA] max 16 tasks per 1 server, overall 16 tasks, 229 login tries (l:1/p:229), ~15 tries per task",
+            "[DATA] attacking ftp://127.0.0.1:21/",
+            "1 of 1 target completed, 0 valid password found",
+            "Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2025-11-30 13:59:00"
+        ]
+    ]
+}
+
+TASK [Criar utilizador SSH de teste (aluno)] ***********************************
+ok: [localhost]
+
+TASK [Definir password para utilizador SSH de teste (apenas para o teste)] *****
+changed: [localhost]
+
+TASK [Testar login SSH com password (deve falhar – só chaves)] *****************
+fatal: [localhost]: FAILED! => {"changed": false, "cmd": ["ssh", "-o", "BatchMode=yes", "-o", "PreferredAuthentications=password", "-o", "PubkeyAuthentication=no", "-o", "StrictHostKeyChecking=no", "-o", "UserKnownHostsFile=/dev/null", "-p", "22", "aluno@127.0.0.1", "true"], "delta": "0:00:00.063989", "end": "2025-11-30 13:59:00.846684", "msg": "non-zero return code", "rc": 255, "start": "2025-11-30 13:59:00.782695", "stderr": "Warning: Permanently added '127.0.0.1' (ED25519) to the list of known hosts.\r\naluno@127.0.0.1: Permission denied (publickey).", "stderr_lines": ["Warning: Permanently added '127.0.0.1' (ED25519) to the list of known hosts.", "aluno@127.0.0.1: Permission denied (publickey)."], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [Mostrar resultado do teste SSH com password] *****************************
+ok: [localhost] => {
+    "msg": [
+        "Resultado esperado: ligação recusada, apenas 'publickey' permitido.",
+        "rc=255",
+        "stderr=Warning: Permanently added '127.0.0.1' (ED25519) to the list of known hosts.\r\naluno@127.0.0.1: Permission denied (publickey)."
+    ]
+}
+
+TASK [Validar que SSH NÃO aceita password (PasswordAuthentication no)] *********
+ok: [localhost] => {
+    "changed": false,
+    "msg": "OK: SSH não aceita password para aluno (apenas chaves)."
+}
+
+TASK [Testar login SSH como root (deve falhar – PermitRootLogin no)] ***********
+fatal: [localhost]: FAILED! => {"changed": false, "cmd": ["ssh", "-o", "BatchMode=yes", "-o", "PubkeyAuthentication=no", "-p", "22", "root@127.0.0.1", "true"], "delta": "0:00:00.013757", "end": "2025-11-30 13:59:01.053821", "msg": "non-zero return code", "rc": 255, "start": "2025-11-30 13:59:01.040064", "stderr": "Host key verification failed.", "stderr_lines": ["Host key verification failed."], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [Validar que root NÃO consegue login via SSH] *****************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "OK: root NÃO consegue login via SSH (PermitRootLogin no)."
+}
+
+TASK [Verificar estado da firewall UFW] ****************************************
+ok: [localhost]
+
+TASK [Mostrar estado do UFW] ***************************************************
+ok: [localhost] => {
+    "msg": [
+        "Estado atual do UFW:",
+        [
+            "Status: active",
+            "Logging: on (low)",
+            "Default: deny (incoming), allow (outgoing), disabled (routed)",
+            "New profiles: skip",
+            "",
+            "To                         Action      From",
+            "--                         ------      ----",
+            "21/tcp                     ALLOW IN    Anywhere                  ",
+            "30000:30100/tcp            ALLOW IN    Anywhere                  ",
+            "22/tcp                     ALLOW IN    Anywhere                  ",
+            "21/tcp (v6)                ALLOW IN    Anywhere (v6)             ",
+            "30000:30100/tcp (v6)       ALLOW IN    Anywhere (v6)             ",
+            "22/tcp (v6)                ALLOW IN    Anywhere (v6)             "
+        ]
+    ]
+}
+
+TASK [Verificar estado Fail2Ban (global)] **************************************
+ok: [localhost]
+
+TASK [Mostrar status global Fail2Ban] ******************************************
+ok: [localhost] => {
+    "msg": [
+        "Fail2Ban status:",
+        [
+            "Status",
+            "|- Number of jail:\t2",
+            "`- Jail list:\tsshd, vsftpd"
+        ]
+    ]
+}
+
+TASK [Verificar jail SSH (sshd)] ***********************************************
+ok: [localhost]
+
+TASK [Verificar jail vsftpd] ***************************************************
+ok: [localhost]
+
+TASK [Mostrar status das jails (sshd / vsftpd)] ********************************
+ok: [localhost] => {
+    "msg": [
+        "Fail2Ban jail sshd:",
+        [
+            "Status for the jail: sshd",
+            "|- Filter",
+            "|  |- Currently failed:\t0",
+            "|  |- Total failed:\t0",
+            "|  `- File list:\t/var/log/auth.log",
+            "`- Actions",
+            "   |- Currently banned:\t0",
+            "   |- Total banned:\t0",
+            "   `- Banned IP list:\t"
+        ],
+        "Fail2Ban jail vsftpd:",
+        [
+            "Status for the jail: vsftpd",
+            "|- Filter",
+            "|  |- Currently failed:\t0",
+            "|  |- Total failed:\t0",
+            "|  `- File list:\t/var/log/vsftpd.log",
+            "`- Actions",
+            "   |- Currently banned:\t0",
+            "   |- Total banned:\t0",
+            "   `- Banned IP list:\t"
+        ]
+    ]
+}
+
+TASK [Últimas 30 linhas de /var/log/auth.log] **********************************
+ok: [localhost]
+
+TASK [Mostrar /var/log/auth.log (últimas linhas)] ******************************
+ok: [localhost] => {
+    "msg": [
+        "--- /var/log/auth.log (últimas 30 linhas) ---",
+        [
+            "Nov 30 13:58:06 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:09 DESKTOP-RE66CC2 vsftpd: message repeated 31 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:58:13 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:13 DESKTOP-RE66CC2 vsftpd: message repeated 15 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:58:17 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:17 DESKTOP-RE66CC2 vsftpd: message repeated 15 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:58:20 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:20 DESKTOP-RE66CC2 vsftpd: message repeated 15 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:58:23 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:23 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:27 DESKTOP-RE66CC2 vsftpd: message repeated 30 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:58:30 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:30 DESKTOP-RE66CC2 vsftpd: message repeated 15 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:58:36 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:37 DESKTOP-RE66CC2 vsftpd: message repeated 15 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:58:40 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:43 DESKTOP-RE66CC2 vsftpd: message repeated 19 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:58:43 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:43 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:43 DESKTOP-RE66CC2 vsftpd: message repeated 9 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:58:44 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:47 DESKTOP-RE66CC2 vsftpd: message repeated 16 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:58:50 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:54 DESKTOP-RE66CC2 vsftpd: message repeated 31 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:58:56 DESKTOP-RE66CC2 vsftpd: pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp",
+            "Nov 30 13:58:56 DESKTOP-RE66CC2 vsftpd: message repeated 4 times: [ pam_unix(vsftpd:auth): authentication failure; logname= uid=0 euid=0 tty=ftp ruser=alunoftp rhost=127.0.0.1  user=alunoftp]",
+            "Nov 30 13:59:00 DESKTOP-RE66CC2 hydra: DIGEST-MD5 common mech free",
+            "Nov 30 13:59:00 DESKTOP-RE66CC2 chpasswd[46223]: pam_unix(chpasswd:chauthtok): password changed for aluno",
+            "Nov 30 13:59:00 DESKTOP-RE66CC2 sshd[46260]: Connection closed by authenticating user aluno 127.0.0.1 port 59302 [preauth]",
+            "Nov 30 13:59:01 DESKTOP-RE66CC2 sshd[46304]: Connection closed by 127.0.0.1 port 59306 [preauth]"
+        ]
+    ]
+}
+
+TASK [Últimas 30 linhas de /var/log/vsftpd.log] ********************************
+ok: [localhost]
+
+TASK [Mostrar /var/log/vsftpd.log (últimas linhas)] ****************************
+ok: [localhost] => {
+    "msg": [
+        "--- /var/log/vsftpd.log (últimas 30 linhas) ---",
+        [
+            "Sun Nov 30 13:58:56 2025 [pid 46118] FTP command: Client \"127.0.0.1\", \"USER alunoftp\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46118] [alunoftp] FTP response: Client \"127.0.0.1\", \"331 Please specify the password.\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46137] [alunoftp] FTP response: Client \"127.0.0.1\", \"530 Login incorrect.\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46139] [alunoftp] FTP response: Client \"127.0.0.1\", \"530 Login incorrect.\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46135] [alunoftp] FTP response: Client \"127.0.0.1\", \"530 Login incorrect.\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46120] FTP command: Client \"127.0.0.1\", \"USER alunoftp\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46120] [alunoftp] FTP response: Client \"127.0.0.1\", \"331 Please specify the password.\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46122] FTP command: Client \"127.0.0.1\", \"USER alunoftp\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46122] [alunoftp] FTP response: Client \"127.0.0.1\", \"331 Please specify the password.\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46124] FTP command: Client \"127.0.0.1\", \"USER alunoftp\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46124] [alunoftp] FTP response: Client \"127.0.0.1\", \"331 Please specify the password.\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46114] [alunoftp] FTP response: Client \"127.0.0.1\", \"530 Login incorrect.\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46112] [alunoftp] FTP response: Client \"127.0.0.1\", \"530 Login incorrect.\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46116] [alunoftp] FTP command: Client \"127.0.0.1\", \"PASS <password>\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46118] [alunoftp] FTP command: Client \"127.0.0.1\", \"PASS <password>\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46120] [alunoftp] FTP command: Client \"127.0.0.1\", \"PASS <password>\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46122] [alunoftp] FTP command: Client \"127.0.0.1\", \"PASS <password>\"",
+            "Sun Nov 30 13:58:56 2025 [pid 46124] [alunoftp] FTP command: Client \"127.0.0.1\", \"PASS <password>\"",
+            "Sun Nov 30 13:58:57 2025 [pid 46141] [alunoftp] FAIL LOGIN: Client \"127.0.0.1\"",
+            "Sun Nov 30 13:58:58 2025 [pid 46142] [alunoftp] FTP response: Client \"127.0.0.1\", \"530 Login incorrect.\"",
+            "Sun Nov 30 13:58:59 2025 [pid 46115] [alunoftp] FAIL LOGIN: Client \"127.0.0.1\"",
+            "Sun Nov 30 13:58:59 2025 [pid 46117] [alunoftp] FAIL LOGIN: Client \"127.0.0.1\"",
+            "Sun Nov 30 13:58:59 2025 [pid 46119] [alunoftp] FAIL LOGIN: Client \"127.0.0.1\"",
+            "Sun Nov 30 13:58:59 2025 [pid 46121] [alunoftp] FAIL LOGIN: Client \"127.0.0.1\"",
+            "Sun Nov 30 13:58:59 2025 [pid 46123] [alunoftp] FAIL LOGIN: Client \"127.0.0.1\"",
+            "Sun Nov 30 13:59:00 2025 [pid 46116] [alunoftp] FTP response: Client \"127.0.0.1\", \"530 Login incorrect.\"",
+            "Sun Nov 30 13:59:00 2025 [pid 46118] [alunoftp] FTP response: Client \"127.0.0.1\", \"530 Login incorrect.\"",
+            "Sun Nov 30 13:59:00 2025 [pid 46120] [alunoftp] FTP response: Client \"127.0.0.1\", \"530 Login incorrect.\"",
+            "Sun Nov 30 13:59:00 2025 [pid 46122] [alunoftp] FTP response: Client \"127.0.0.1\", \"530 Login incorrect.\"",
+            "Sun Nov 30 13:59:00 2025 [pid 46124] [alunoftp] FTP response: Client \"127.0.0.1\", \"530 Login incorrect.\""
+        ]
+    ]
+}
+
+TASK [Verificar estado do serviço Juice Shop (juice.service)] ******************
+ok: [localhost]
+
+TASK [Validar que Juice Shop está ativo] ***************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "OK: serviço juice.service está active."
+}
+
+TASK [Verificar estado do NGINX] ***********************************************
+ok: [localhost]
+
+TASK [Validar que NGINX está ativo] ********************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": "OK: NGINX está active."
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=31   changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+

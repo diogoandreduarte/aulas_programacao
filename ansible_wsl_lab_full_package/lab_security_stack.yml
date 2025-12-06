@@ -1,0 +1,487 @@
+---
+- name: LAB COMPLETO – FTP, FileZilla, SSH, Juice Shop, Segurança
+  hosts: local
+  become: true
+  gather_facts: true
+
+  vars:
+    ftp_user: "alunoftp"
+    ftp_password: "aluno123"
+    juice_shop_dir: "/opt/juice-shop"
+    wordlist_dir: "/opt/wordlists"
+    wordlist_file: "/opt/wordlists/common.txt"
+
+  tasks:
+    - name: Atualizar APT
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Instalar ferramentas de ataque, auditoria e defesa
+      ansible.builtin.apt:
+        name:
+          - vsftpd
+          - openssh-server
+          - openssh-client
+          - nginx
+          - git
+          - nmap
+          - hydra
+          - filezilla
+          - netcat
+          - wireshark
+          - tcpdump
+          - ufw
+          - fail2ban
+          - curl
+          - nano
+          - iproute2
+          - iputils-ping
+        state: present
+
+    # FTP
+    - name: Configurar vsftpd (FTP seguro + PASV) com ficheiro completo
+      ansible.builtin.copy:
+        dest: /etc/vsftpd.conf
+        mode: "0644"
+        content: |
+          listen=YES
+          listen_ipv6=NO
+
+          anonymous_enable=NO
+          local_enable=YES
+          write_enable=YES
+
+          # Chroot dos utilizadores locais
+          chroot_local_user=YES
+          allow_writeable_chroot=YES
+
+          # Diretório vazio requerido pelo vsftpd
+          secure_chroot_dir=/var/run/vsftpd/empty
+
+          # Passive mode (para funcionar bem com NAT/Firewalls)
+          pasv_enable=YES
+          pasv_min_port=30000
+          pasv_max_port=30100
+
+          # Logs
+          xferlog_enable=YES
+          log_ftp_protocol=YES
+          xferlog_file=/var/log/vsftpd.log
+
+          # Outras opções recomendadas
+          local_umask=022
+          use_localtime=YES
+          connect_from_port_20=YES
+          pam_service_name=vsftpd
+
+
+    - name: Criar utilizador FTP
+      ansible.builtin.user:
+        name: "{{ ftp_user }}"
+        state: present
+        create_home: yes
+
+    - name: Definir password do utilizador FTP
+      ansible.builtin.shell: echo "{{ ftp_user }}:{{ ftp_password }}" | chpasswd
+
+    - name: Criar diretórios FTP (ftp e uploads)
+      ansible.builtin.file:
+        path: "/home/{{ ftp_user }}/{{ item }}"
+        state: directory
+        owner: "{{ ftp_user }}"
+        group: "{{ ftp_user }}"
+        mode: "0755"
+      loop:
+        - ftp
+        - uploads
+
+    - name: Reiniciar e ativar vsftpd
+      ansible.builtin.service:
+        name: vsftpd
+        state: restarted
+        enabled: yes
+
+    # FIREWALL UFW
+    - name: Permitir SSH (22/tcp) na UFW
+      ansible.builtin.command: ufw allow 22/tcp
+      register: ufw_allow_22
+      changed_when: "'added' in ufw_allow_22.stdout or 'updated' in ufw_allow_22.stdout"
+      failed_when: false
+
+    - name: Permitir FTP (21/tcp) na UFW
+      ansible.builtin.command: ufw allow 21/tcp
+      register: ufw_allow_21
+      changed_when: "'added' in ufw_allow_21.stdout or 'updated' in ufw_allow_21.stdout"
+      failed_when: false
+
+    - name: Permitir portas passivas FTP (30000-30100/tcp) na UFW
+      ansible.builtin.command: ufw allow 30000:30100/tcp
+      register: ufw_allow_pasv
+      changed_when: "'added' in ufw_allow_pasv.stdout or 'updated' in ufw_allow_pasv.stdout"
+      failed_when: false
+
+    - name: Ativar UFW
+      ansible.builtin.command: ufw --force enable
+      register: ufw_enable
+      changed_when: false
+      failed_when: false
+
+    # SSH HARDENING
+    - name: PasswordAuthentication no
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+
+    - name: PubkeyAuthentication yes
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PubkeyAuthentication'
+        line: 'PubkeyAuthentication yes'
+
+    - name: PermitRootLogin no
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+
+    - name: Reiniciar SSH
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+        enabled: yes
+
+    # FAIL2BAN
+    - name: Configurar Fail2Ban (SSH e vsftpd)
+      ansible.builtin.copy:
+        dest: /etc/fail2ban/jail.local
+        content: |
+          [DEFAULT]
+          bantime  = 3600
+          findtime = 600
+          maxretry = 3
+
+          [sshd]
+          enabled  = true
+          port     = ssh
+          logpath  = /var/log/auth.log
+
+          [vsftpd]
+          enabled  = true
+          port     = 21
+          logpath  = /var/log/vsftpd.log
+
+          [nginx-http-auth]
+          enabled = true
+          port    = http,https
+          filter  = nginx-http-auth
+          logpath = /var/log/nginx/error.log
+          maxretry = 3 
+        mode: "0644"
+
+    - name: Reiniciar Fail2Ban
+      ansible.builtin.service:
+        name: fail2ban
+        state: restarted
+        enabled: yes
+
+    # JUICE SHOP + NGINX
+    - name: Clonar Juice Shop (caso não exista)
+      ansible.builtin.git:
+        repo: https://github.com/juice-shop/juice-shop.git
+        dest: "{{ juice_shop_dir }}"
+        force: no
+      register: juice_git
+
+    - name: Instalar dependências do Juice Shop
+      ansible.builtin.command: npm install --legacy-peer-deps
+      args:
+        chdir: "{{ juice_shop_dir }}"
+      when: juice_git.after is defined
+
+    - name: Configurar NGINX reverse proxy para Juice Shop
+      ansible.builtin.copy:
+        dest: /etc/nginx/sites-available/juice-shop.conf
+        content: |
+          server {
+              listen 80;
+              listen [::]:80;
+
+              server_name _;
+
+              location / {
+                  proxy_pass http://127.0.0.1:3000/;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              }
+          }
+
+    - name: Ativar site Juice Shop no NGINX
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/juice-shop.conf
+        dest: /etc/nginx/sites-enabled/juice-shop.conf
+        state: link
+        force: yes
+
+    - name: Testar configuração NGINX
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      changed_when: false
+
+    - name: Reiniciar NGINX
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+        enabled: yes
+
+    # NÃO criamos nem mexemos no unit file – só garantimos que o serviço existente está ligado
+    - name: Garantir que o serviço Juice Shop (juice.service) está ativo
+      ansible.builtin.service:
+        name: juice
+        state: started
+        enabled: yes
+
+    # WORDLIST HYDRA
+    - name: Criar diretório de wordlists
+      ansible.builtin.file:
+        path: "{{ wordlist_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Criar wordlist comum
+      ansible.builtin.copy:
+        dest: "{{ wordlist_file }}"
+        content: |
+          123456
+          123456789
+          password
+          admin
+          welcome
+          monkey
+          ftp123
+          user123
+          qwerty
+          123123
+          Aurora
+          Horizonte
+          Serpente
+          Castelo
+          Brisa
+          Relâmpago
+          Estelar
+          Caminho
+          Folhagem
+          Oceano
+          Marfim
+          Pedra
+          Encosta
+          Silêncio
+          Turquesa
+          Neblina
+          Declive
+          Relíquia
+          Suspiro
+          Melodia
+          Mistério
+          Fonte
+          Lareira
+          Memória
+          Sonho
+          Vento
+          Areia
+          Deserto
+          Miragem
+          Colina
+          Trevo
+          Jardim
+          Galáxia
+          Estação
+          Trilho
+          Harmonia
+          Reflexo
+          Luar
+          Cristal
+          Fóssil
+          Penhasco
+          Caminhante
+          Raiz
+          Céu
+          Espiral
+          Orvalho
+          Folha
+          Cúpula
+          Eco
+          Estrofe
+          Verso
+          Ritmo
+          Canto
+          Poema
+          Muralha
+          Templo
+          Arco
+          Rio
+          Cascata
+          Musgo
+          Tronco
+          Sombra
+          Claridade
+          Impulso
+          Viagem
+          Passo
+          Fragmento
+          Universo
+          Raio
+          Trovão
+          Geada
+          Brilho
+          Cintilar
+          Véu
+          Encanto
+          Portal
+          Labirinto
+          Instante
+          Pulsar
+          Mirante
+          Desnível
+          Vale
+          Serração
+          Trégua
+          Caverna
+          Abismo
+          Concha
+          Maré
+          Navegante
+          Safira
+          Pergaminho
+          Brasão
+          Nobreza
+          Aragem
+          Respingo
+          Dança
+          Cintilação
+          Escuridão
+          Farol
+          Nebula
+          Constelação
+          Feixe
+          Arsenal
+          Estilhaço
+          Marulho
+          Firmamento
+          Penúmbra
+          Imersão
+          Terracota
+          Mosaico
+          Virtude
+          Poesia
+          Sussurro
+          Vagalume
+          Esfera
+          Aquarela
+          Riacho
+          Tempo
+          Lembrança
+          Chama
+          Esplendor
+          Planície
+          Vórtice
+          Vertigem
+          Astro
+          Cúpula
+          Folclore
+          Marulho
+          Cintura
+          Precisão
+          Perfil
+          Gume
+          Auréola
+          Cantil
+          Estágio
+          Forja
+          Caverna
+          Estadia
+          Relento
+          Confronto
+          Nebuloso
+          Ardósia
+          Sopro
+          Beira
+          Manto
+          Luz
+          Névoa
+          Aroma
+          Vergel
+          Pousio
+          Horizonte
+          Lenda
+          Destino
+          Vela
+          Rastro
+          Pórtico
+          Coroa
+          Monte
+          Escarpa
+          Ravina
+          Pradaria
+          Valeiro
+          Caravela
+          Luau
+          Trilha
+          Refúgio
+          Cidade
+          Planeta
+          Sussurro
+          Marfim
+          Estampa
+          Areiral
+          Fragmento
+          Cascaria
+          Bravio
+          Sereno
+          Alvorada
+          Fornalha
+          Turbulência
+          Crisálida
+          Ícone
+          Sentinela
+          Guardiã
+          Amuleto
+          Chicote
+          Ferrugem
+          Cintilante
+          Órbita
+          Estádio
+          Ternura
+          Caligrafia
+          Ondulação
+          Ressonância
+          Tecido
+          Estante
+          Bravura
+          Cabedal
+          Fenda
+          Natureza
+          Bravado
+          Cornucópia
+          Sombra
+          Folhito
+          Valado
+          Verdete
+          Poente
+          Astúcia
+          Panorama
+          Larejo
+          Vagão
+          Tocha
+          Baliza
+          Caruma
+          Ria
+          Jataí
+          Pardal
+          Alpendre
+          Cisne
+          Lareira
+
+        mode: "0644"

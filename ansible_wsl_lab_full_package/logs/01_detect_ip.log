@@ -1,0 +1,26 @@
+
+PLAY [Detectar IP do Ubuntu e exportar para Windows] ***************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [localhost]
+
+TASK [Criar diretório labinfo] *************************************************
+ok: [localhost]
+
+TASK [Guardar IP principal do Ubuntu] ******************************************
+ok: [localhost]
+
+TASK [Criar ficheiro JSON com o IP] ********************************************
+ok: [localhost]
+
+TASK [Criar script PowerShell para o Windows ler o IP] *************************
+ok: [localhost]
+
+TASK [Mostrar IP detectado] ****************************************************
+ok: [localhost] => {
+    "msg": "IP do Ubuntu detectado: 172.18.216.242"
+}
+
+PLAY RECAP *********************************************************************
+localhost                  : ok=6    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

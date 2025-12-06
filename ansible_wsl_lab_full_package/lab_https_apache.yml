@@ -1,0 +1,148 @@
+---
+- name: Sessão 7 – Apache HTTPS + TLS Hardening (Ubuntu)
+  hosts: local
+  become: true
+  gather_facts: true
+
+  vars:
+    apache_ssl_dir: "/etc/apache2/ssl"
+    apache_ssl_key: "/etc/apache2/ssl/apache.key"
+    apache_ssl_cert: "/etc/apache2/ssl/apache.crt"
+    lab_log_dir: "/var/log/lab_tests"
+
+  tasks:
+    - name: Criar diretório de logs do laboratório
+      ansible.builtin.file:
+        path: "{{ lab_log_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Instalar apache2 e openssl
+      ansible.builtin.apt:
+        name:
+          - apache2
+          - openssl
+        state: present
+        update_cache: yes
+
+    - name: Ativar módulos SSL / headers / rewrite
+      ansible.builtin.command: a2enmod "{{ item }}"
+      loop:
+        - ssl
+        - headers
+        - rewrite
+      register: a2enmod_result
+      changed_when: false
+      failed_when: false
+
+    - name: Criar diretório SSL do Apache
+      ansible.builtin.file:
+        path: "{{ apache_ssl_dir }}"
+        state: directory
+        mode: "0700"
+
+    - name: Gerar certificado SSL/TLS autoassinado (Apache)
+      ansible.builtin.command: >
+        openssl req -x509 -nodes -days 365
+        -newkey rsa:2048
+        -subj "/C=PT/ST=Lisboa/L=Lisboa/O=Escola/CN=localhost"
+        -keyout {{ apache_ssl_key }}
+        -out {{ apache_ssl_cert }}
+      args:
+        creates: "{{ apache_ssl_cert }}"
+
+    - name: Configurar portas do Apache (8080 e 8443)
+      ansible.builtin.copy:
+        dest: /etc/apache2/ports.conf
+        mode: "0644"
+        content: |
+          Listen 8080
+          Listen 8443
+
+          <IfModule ssl_module>
+              Listen 8443
+          </IfModule>
+
+          <IfModule mod_gnutls.c>
+              Listen 8443
+          </IfModule>
+
+    - name: Configurar VirtualHost HTTP (8080) com redireção para HTTPS
+      ansible.builtin.copy:
+        dest: /etc/apache2/sites-available/000-default.conf
+        mode: "0644"
+        content: |
+          <VirtualHost *:8080>
+              ServerName localhost
+              Redirect permanent / https://localhost:8443/
+          </VirtualHost>
+
+    - name: Configurar VirtualHost HTTPS (8443) com certificado e hardening
+      ansible.builtin.copy:
+        dest: /etc/apache2/sites-available/default-ssl.conf
+        mode: "0644"
+        content: |
+          <IfModule mod_ssl.c>
+          <VirtualHost _default_:8443>
+              ServerAdmin webmaster@localhost
+              ServerName localhost
+
+              DocumentRoot /var/www/html
+
+              SSLEngine on
+              SSLCertificateFile      {{ apache_ssl_cert }}
+              SSLCertificateKeyFile   {{ apache_ssl_key }}
+
+              SSLProtocol all -SSLv2 -SSLv3
+              SSLCipherSuite HIGH:!aNULL:!MD5
+              SSLHonorCipherOrder on
+
+              Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+              <Directory /var/www/html>
+                  Options Indexes FollowSymLinks
+                  AllowOverride All
+                  Require all granted
+              </Directory>
+
+              ErrorLog ${APACHE_LOG_DIR}/error_ssl.log
+              CustomLog ${APACHE_LOG_DIR}/access_ssl.log combined
+          </VirtualHost>
+          </IfModule>
+
+    - name: Ativar site SSL por omissão
+      ansible.builtin.command: a2ensite default-ssl
+      register: a2ensite_result
+      changed_when: false
+      failed_when: false
+
+    - name: Reiniciar Apache2
+      ansible.builtin.service:
+        name: apache2
+        state: restarted
+        enabled: yes
+
+    - name: Testar HTTP (8080) -> redireção para HTTPS
+      ansible.builtin.command: curl -I http://localhost:8080
+      register: curl_http
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado HTTP (8080)
+      ansible.builtin.debug:
+        msg:
+          - "Resposta HTTP (8080):"
+          - "{{ curl_http.stdout_lines | default([]) }}"
+
+    - name: Testar HTTPS (8443) com certificado autoassinado
+      ansible.builtin.command: curl -k -I https://localhost:8443
+      register: curl_https
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado HTTPS (8443)
+      ansible.builtin.debug:
+        msg:
+          - "Resposta HTTPS (8443):"
+          - "{{ curl_https.stdout_lines | default([]) }}"
+          - "Apache HTTPS + TLS Hardening configurado."

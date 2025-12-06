@@ -1,0 +1,214 @@
+---
+- name: "Testes automáticos de segurança SSH / FTP / NGINX / Juice Shop"
+  hosts: local
+  become: true
+  gather_facts: true
+
+  vars:
+    ftp_user: "alunoftp"
+    ssh_test_user: "aluno"
+    hydra_wordlist: "/opt/wordlists/common.txt"
+    lab_log_dir: "/var/log/lab_tests"
+    ssh_port: 22
+    ftp_port: 21
+    http_port: 80
+
+  tasks:
+    - name: Criar diretório de logs de testes do laboratório
+      ansible.builtin.file:
+        path: "{{ lab_log_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Mostrar IP a usar no Windows
+      ansible.builtin.debug:
+        msg:
+          - "IP do servidor de laboratório (Ubuntu): {{ ansible_default_ipv4.address }}"
+          - "No Windows, este IP será carregado pela script labinfo.ps1 como $LAB_IP."
+
+    - name: Verificar se nmap está instalado
+      ansible.builtin.command: which nmap
+      register: nmap_bin
+      failed_when: nmap_bin.rc != 0
+
+    - name: Correr scan Nmap às portas 21,22,80 (localhost)
+      ansible.builtin.command: >
+        nmap -sV -p {{ ftp_port }},{{ ssh_port }},{{ http_port }}
+        127.0.0.1
+        -oN {{ lab_log_dir }}/nmap_ftp_ssh_http.txt
+      register: nmap_scan
+      changed_when: false
+
+    - name: Mostrar resumo do scan Nmap
+      ansible.builtin.debug:
+        msg:
+          - "Nmap executado. Resultado gravado em {{ lab_log_dir }}/nmap_ftp_ssh_http.txt"
+          - "{{ nmap_scan.stdout_lines | default([]) }}"
+
+    - name: Verificar se hydra está instalado
+      ansible.builtin.command: which hydra
+      register: hydra_bin
+      failed_when: hydra_bin.rc != 0
+
+    - name: "Testar força bruta FTP com Hydra (esperado: SEM sucesso)"
+      ansible.builtin.command: >
+        hydra -l {{ ftp_user }}
+        -P {{ hydra_wordlist }}
+        -o {{ lab_log_dir }}/hydra_ftp_{{ ftp_user }}.log
+        ftp://127.0.0.1
+      register: hydra_test
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar saída resumida do Hydra
+      ansible.builtin.debug:
+        msg:
+          - "Hydra executado contra FTP (127.0.0.1). Log em {{ lab_log_dir }}/hydra_ftp_{{ ftp_user }}.log"
+          - "{{ hydra_test.stdout_lines | default([]) }}"
+
+    - name: Criar utilizador SSH de teste (aluno)
+      ansible.builtin.user:
+        name: "{{ ssh_test_user }}"
+        state: present
+        create_home: true
+
+    - name: Definir password para utilizador SSH de teste (apenas para o teste)
+      ansible.builtin.shell: echo "{{ ssh_test_user }}:SenhaForte123" | chpasswd
+
+    - name: "Testar login SSH com password (deve falhar – só chaves)"
+      ansible.builtin.command: >
+       ssh -o BatchMode=yes \
+        -o PreferredAuthentications=password \
+        -o PubkeyAuthentication=no \
+        -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -p 22 aluno@127.0.0.1 true
+      register: ssh_pw_test
+      ignore_errors: true
+      changed_when: false
+
+    - name: Mostrar resultado do teste SSH com password
+      ansible.builtin.debug:
+        msg:
+          - "Resultado esperado: ligação recusada, apenas 'publickey' permitido."
+          - "rc={{ ssh_pw_test.rc }}"
+          - "stderr={{ ssh_pw_test.stderr | default('') }}"
+
+    - name: Validar que SSH NÃO aceita password (PasswordAuthentication no)
+      ansible.builtin.assert:
+        that:
+          - ssh_pw_test.rc != 0
+        success_msg: "OK: SSH não aceita password para {{ ssh_test_user }} (apenas chaves)."
+        fail_msg: "FALHA: SSH ainda está a aceitar password – rever sshd_config."
+
+    - name: "Testar login SSH como root (deve falhar – PermitRootLogin no)"
+      ansible.builtin.command: >
+        ssh -o BatchMode=yes
+            -o PubkeyAuthentication=no
+            -p {{ ssh_port }}
+            root@127.0.0.1
+            true
+      register: ssh_root_test
+      ignore_errors: true
+      changed_when: false
+
+    - name: Validar que root NÃO consegue login via SSH
+      ansible.builtin.assert:
+        that:
+          - ssh_root_test.rc != 0
+        success_msg: "OK: root NÃO consegue login via SSH (PermitRootLogin no)."
+        fail_msg: "FALHA: root ainda consegue login SSH – rever sshd_config."
+
+    - name: Verificar estado da firewall UFW
+      ansible.builtin.command: ufw status verbose
+      register: ufw_status
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar estado do UFW
+      ansible.builtin.debug:
+        msg:
+          - "Estado atual do UFW:"
+          - "{{ ufw_status.stdout_lines | default([]) }}"
+
+    - name: Verificar estado Fail2Ban (global)
+      ansible.builtin.command: fail2ban-client status
+      register: f2b_global
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar status global Fail2Ban
+      ansible.builtin.debug:
+        msg:
+          - "Fail2Ban status:"
+          - "{{ f2b_global.stdout_lines | default([]) }}"
+
+    - name: Verificar jail SSH (sshd)
+      ansible.builtin.command: fail2ban-client status sshd
+      register: f2b_ssh
+      changed_when: false
+      failed_when: false
+
+    - name: Verificar jail vsftpd
+      ansible.builtin.command: fail2ban-client status vsftpd
+      register: f2b_ftp
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar status das jails (sshd / vsftpd)
+      ansible.builtin.debug:
+        msg:
+          - "Fail2Ban jail sshd:"
+          - "{{ f2b_ssh.stdout_lines | default([]) }}"
+          - "Fail2Ban jail vsftpd:"
+          - "{{ f2b_ftp.stdout_lines | default([]) }}"
+
+    - name: Últimas 30 linhas de /var/log/auth.log
+      ansible.builtin.shell: tail -n 30 /var/log/auth.log
+      register: auth_log
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar /var/log/auth.log (últimas linhas)
+      ansible.builtin.debug:
+        msg:
+          - "--- /var/log/auth.log (últimas 30 linhas) ---"
+          - "{{ auth_log.stdout_lines | default([]) }}"
+
+    - name: Últimas 30 linhas de /var/log/vsftpd.log
+      ansible.builtin.shell: tail -n 30 /var/log/vsftpd.log
+      register: vsftpd_log
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar /var/log/vsftpd.log (últimas linhas)
+      ansible.builtin.debug:
+        msg:
+          - "--- /var/log/vsftpd.log (últimas 30 linhas) ---"
+          - "{{ vsftpd_log.stdout_lines | default([]) }}"
+
+    - name: Verificar estado do serviço Juice Shop (juice.service)
+      ansible.builtin.command: systemctl is-active juice
+      register: js_status
+      changed_when: false
+      failed_when: false
+
+    - name: Validar que Juice Shop está ativo
+      ansible.builtin.assert:
+        that:
+          - js_status.stdout.strip() == "active"
+        success_msg: "OK: serviço juice.service está active."
+        fail_msg: "FALHA: juice.service não está active – rever serviço systemd."
+
+    - name: Verificar estado do NGINX
+      ansible.builtin.command: systemctl is-active nginx
+      register: nginx_status
+      changed_when: false
+      failed_when: false
+
+    - name: Validar que NGINX está ativo
+      ansible.builtin.assert:
+        that:
+          - nginx_status.stdout.strip() == "active"
+        success_msg: "OK: NGINX está active."
+        fail_msg: "FALHA: NGINX não está active – rever configuração."

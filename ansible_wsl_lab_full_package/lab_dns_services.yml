@@ -1,0 +1,77 @@
+---
+- name: LAB – Integração do DNS Local com NGINX, FTP e SSH
+  hosts: localhost
+  connection: local
+  become: true
+  gather_facts: yes
+
+  vars:
+    local_domain_nginx: "meu-site.local"
+    local_domain_ssh: "ssh.local"
+    local_domain_ftp: "ftp.local"
+
+  tasks:
+
+    # ============================================================
+    # 1. Garantir que domínios estão no /etc/hosts
+    # ============================================================
+    - name: Adicionar domínios NGINX/FTP/SSH ao /etc/hosts
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} ANSIBLE DNS SERVICES"
+        block: |
+          127.0.0.1 {{ local_domain_nginx }}
+          127.0.0.1 {{ local_domain_ssh }}
+          127.0.0.1 {{ local_domain_ftp }}
+
+    # ============================================================
+    # 2. NGINX – configurar server_name para meu-site.local
+    # ============================================================
+    - name: Configurar domain no NGINX
+      ansible.builtin.template:
+        src: nginx_dns_template.j2
+        dest: /etc/nginx/sites-available/default
+        mode: "0644"
+
+    - name: Validar configuração NGINX
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      changed_when: false
+
+    - debug:
+        msg: "{{ nginx_test.stderr }}"
+
+    - name: Recarregar NGINX
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
+
+    # ============================================================
+    # 3. FTP – permitir login pelo domínio (só teste DNS)
+    # ============================================================
+    - name: Testar DNS FTP
+      ansible.builtin.command: ping -c 1 {{ local_domain_ftp }}
+      changed_when: false
+      register: ping_ftp
+
+    - debug:
+        msg: "{{ ping_ftp.stdout }}"
+
+    # ============================================================
+    # 4. SSH – permitir login usando o domínio
+    # ============================================================
+    - name: Testar DNS SSH
+      ansible.builtin.command: ping -c 1 {{ local_domain_ssh }}
+      changed_when: false
+      register: ping_ssh
+
+    - debug:
+        msg: "{{ ping_ssh.stdout }}"
+
+    - name: Mostrar instruções para o aluno
+      ansible.builtin.debug:
+        msg: |
+          Testes finais:
+          - NGINX:   curl http://{{ local_domain_nginx }}
+          - SSH:     ssh user@{{ local_domain_ssh }}
+          - FTP:     ftp {{ local_domain_ftp }}

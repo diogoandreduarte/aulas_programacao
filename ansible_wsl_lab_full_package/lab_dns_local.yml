@@ -1,0 +1,100 @@
+---
+- name: Sessão DNS Local – Simulação /etc/hosts + Testes
+  hosts: local
+  become: true
+  gather_facts: true
+
+  vars:
+    lab_log_dir: "/var/log/lab_tests"
+
+  tasks:
+    - name: Criar diretório de logs do laboratório
+      ansible.builtin.file:
+        path: "{{ lab_log_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Instalar dnsutils (para dig / nslookup)
+      ansible.builtin.apt:
+        name: dnsutils
+        state: present
+        update_cache: yes
+
+    - name: Adicionar domínios locais 127.0.0.1 em /etc/hosts
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} ANSIBLE DNS LOCAL 127.0.0.1"
+        block: |
+          127.0.0.1 meu-site.local
+          127.0.0.1 api.meu-site.local
+          127.0.0.1 loja.local
+          127.0.0.1 painel.local
+          127.0.0.1 ftp.local
+          127.0.0.1 ssh.local
+
+    - name: Obter IP principal da máquina (VM/WSL)
+      ansible.builtin.set_fact:
+        lab_server_ip: "{{ ansible_default_ipv4.address }}"
+
+    - name: Adicionar domínios com IP real da VM/WSL em /etc/hosts
+      ansible.builtin.blockinfile:
+        path: /etc/hosts
+        marker: "# {mark} ANSIBLE DNS LOCAL IP_REAL"
+        block: |
+          {{ lab_server_ip }} servidor.local
+          {{ lab_server_ip }} nginx.local
+
+    - name: Testar ping a meu-site.local
+      ansible.builtin.command: ping -c 1 meu-site.local
+      register: ping_meu_site
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado ping meu-site.local
+      ansible.builtin.debug:
+        msg: "{{ ping_meu_site.stdout_lines | default([]) }}"
+
+    - name: Testar nslookup a loja.local
+      ansible.builtin.command: nslookup loja.local
+      register: nslookup_loja
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado nslookup loja.local
+      ansible.builtin.debug:
+        msg: "{{ nslookup_loja.stdout_lines | default([]) }}"
+
+    - name: Testar dig a painel.local
+      ansible.builtin.command: dig painel.local
+      register: dig_painel
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado dig painel.local
+      ansible.builtin.debug:
+        msg: "{{ dig_painel.stdout_lines | default([]) }}"
+
+    - name: Testar HTTP em loja.local
+      ansible.builtin.command: curl -I http://loja.local
+      register: curl_loja
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado HTTP loja.local
+      ansible.builtin.debug:
+        msg:
+          - "--- curl -I http://loja.local ---"
+          - "{{ curl_loja.stdout_lines | default([]) }}"
+
+    - name: Testar HTTP em nginx.local
+      ansible.builtin.command: curl -I http://nginx.local
+      register: curl_nginx
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado HTTP nginx.local
+      ansible.builtin.debug:
+        msg:
+          - "--- curl -I http://nginx.local ---"
+          - "{{ curl_nginx.stdout_lines | default([]) }}"
+          - "Se tiver 200 OK ou 3xx, DNS local + serviço web estão OK."

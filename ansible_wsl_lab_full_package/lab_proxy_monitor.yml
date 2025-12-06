@@ -1,0 +1,148 @@
+---
+- name: Sessão 8 – Proxy Reverso, Fail2Ban NGINX e Netdata (Monitorização)
+  hosts: local
+  become: true
+  gather_facts: true
+
+  vars:
+    reverso_conf: "/etc/nginx/sites-available/reverso.conf"
+    log_dir: "/var/log/lab_tests"
+
+  tasks:
+    - name: Criar diretório de logs de laboratório
+      ansible.builtin.file:
+        path: "{{ log_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Garantir que NGINX está instalado
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Ativar NGINX no arranque
+      ansible.builtin.service:
+        name: nginx
+        enabled: yes
+        state: started
+
+    - name: Criar configuração do proxy reverso (8081 -> 8080)
+      ansible.builtin.copy:
+        dest: "{{ reverso_conf }}"
+        mode: "0644"
+        content: |
+          server {
+              listen 8081;
+              server_name _;
+
+              location / {
+                  proxy_pass http://127.0.0.1:8080;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              }
+          }
+
+    - name: Ativar site reverso.conf
+      ansible.builtin.file:
+        src: "{{ reverso_conf }}"
+        dest: "/etc/nginx/sites-enabled/reverso.conf"
+        state: link
+        force: yes
+
+    - name: Testar configuração NGINX
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      changed_when: false
+
+    - name: Mostrar resultado do teste NGINX
+      ansible.builtin.debug:
+        msg: "{{ nginx_test.stdout_lines | default([]) }}"
+
+    - name: Reiniciar NGINX para aplicar proxy reverso
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+
+    - name: Instalar Fail2Ban (se ainda não estiver)
+      ansible.builtin.apt:
+        name: fail2ban
+        state: present
+
+    - name: Ativar Fail2Ban no arranque
+      ansible.builtin.service:
+        name: fail2ban
+        enabled: yes
+        state: started
+
+    - name: Adicionar jail Fail2Ban para nginx-http-auth
+      ansible.builtin.blockinfile:
+        path: /etc/fail2ban/jail.local
+        create: yes
+        marker: "# {mark} ANSIBLE NGINX HTTP AUTH"
+        block: |
+          [nginx-http-auth]
+          enabled = true
+          port = http,https
+          filter = nginx-http-auth
+          logpath = /var/log/nginx/error.log
+          maxretry = 3
+
+    - name: Reiniciar Fail2Ban
+      ansible.builtin.service:
+        name: fail2ban
+        state: restarted
+
+    - name: Instalar Netdata (kickstart script)
+      ansible.builtin.shell: |
+        bash <(curl -Ss https://my-netdata.io/kickstart.sh) --dont-wait
+      args:
+        executable: /bin/bash
+      register: netdata_install
+      changed_when: false
+      failed_when: false
+
+    - name: Garantir serviço Netdata ativo
+      ansible.builtin.service:
+        name: netdata
+        state: started
+        enabled: yes
+      failed_when: false
+
+    - name: Testar proxy reverso (curl http://localhost:8081)
+      ansible.builtin.command: curl -I http://localhost:8081
+      register: curl_proxy
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado do teste do proxy reverso
+      ansible.builtin.debug:
+        msg:
+          - "Resposta HTTP via proxy reverso (8081 -> 8080):"
+          - "{{ curl_proxy.stdout_lines | default([]) }}"
+
+    - name: Verificar jail Fail2Ban nginx-http-auth
+      ansible.builtin.command: fail2ban-client status nginx-http-auth
+      register: f2b_nginx
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar estado da jail nginx-http-auth
+      ansible.builtin.debug:
+        msg:
+          - "Fail2Ban jail nginx-http-auth:"
+          - "{{ f2b_nginx.stdout_lines | default([]) }}"
+
+    - name: Testar acesso ao Netdata (localhost:19999)
+      ansible.builtin.command: curl -I http://localhost:19999
+      register: curl_netdata
+      changed_when: false
+      failed_when: false
+
+    - name: Mostrar resultado do teste Netdata
+      ansible.builtin.debug:
+        msg:
+          - "Resposta HTTP Netdata (19999):"
+          - "{{ curl_netdata.stdout_lines | default([]) }}"
+          - "Se tiver 200 OK ou 3xx, Netdata está acessível."
